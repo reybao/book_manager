@@ -1,3 +1,4 @@
 #!/bin/bash
-# UI layer: display library information.
-# TODO: Show books, search results, status, and details.
+
+printf "\nMy Library\n\n"
+gum table --print

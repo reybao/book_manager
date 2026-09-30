@@ -1,2 +1,4 @@
 #!/bin/bash
-# UI layer: display recommendation progress and final results.
+
+printf "\nRecommended Books\n\n"
+gum table --print
