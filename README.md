@@ -81,7 +81,7 @@ read, reading, or read, and review metadata before saving.
 
 ## Demo
 
-Narrated demo video: pending. A video link will be added before submission.
+Narrated demo video: [Watch the demo](https://youtu.be/zda538j9eqQ)
 
 ## Acknowledgments
 
