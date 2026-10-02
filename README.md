@@ -1,90 +1,123 @@
 # Personal Book Manager
 
-A terminal book manager built for PS02 using Bash, Gum, Open Library,
-jq, and small Python helpers.
+A terminal based application for managing a personal reading library and discovering new books. It uses Bash to coordinate small programs, Gum to provide an interactive terminal interface, and Open Library to retrieve online book information.
+
+## Features
+
+- Browse books saved in a local library
+- Add books using online metadata or manual entry
+- Record books as `want_to_read`, `reading`, or `read`
+- Search saved books by title or author
+- Generate up to five personalized recommendations
+- Review book information before saving it
 
 ## Requirements
 
 - Bash
-- Gum
+- [Gum](https://github.com/charmbracelet/gum)
 - curl
 - jq
 - Python 3
 
-Internet access is needed for metadata lookup and recommendations.
-Browsing and searching saved books work locally. If metadata lookup
-fails, book details can be entered manually.
+Internet access is required for metadata lookup and recommendations. Browsing and searching saved books work locally.
 
-## Run
+On macOS, Gum can be installed with:
 
-From the project directory:
+```bash
+brew install gum
+```
+
+## Running the Application
+
+Open a terminal in the project directory and run:
 
 ```bash
 bash app.sh
 ```
 
-Use the arrow keys and Enter to select menu items.
+Use the arrow keys to move through the menu and press Enter to select an option.
 
-- **Browse Library:** view saved books and reading statuses.
-- **Add Book:** search for metadata, select a matching book or enter
-  details manually, choose a reading status, and confirm saving.
-- **Search Library:** find saved records containing a keyword.
-- **Get Recommendations:** enter an interest and an exploration topic
-  to generate up to five recommendations.
-- **Quit:** exit the application.
+## Application Architecture
 
-## Architecture
+The application follows this general flow:
 
-The application follows UI → Workflows → Components → Data → Storage.
-`app.sh` starts the menu. The `ui/` scripts handle menus and tables,
-while `workflows/` coordinates library operations and recommendation
-tasks. The `books/` scripts search saved records and retrieve metadata.
-Three independent scripts in `recommendations/` generate candidates.
-Only `data/book_database.sh` directly accesses `data/books.csv`.
-Bash coordinates the programs, curl retrieves online data, jq processes
-JSON, and Python helpers handle CSV and recommendation refinement.
+```text
+User Interface → Workflows → Components → Data → Storage
+```
 
-## Parallel Recommendation Workflow
+`app.sh` starts the application. Scripts in `ui/` display menus, input fields, and tables using Gum. Scripts in `workflows/` coordinate complete operations such as adding a book or generating recommendations. The `books/` and `recommendations/` directories contain focused components for metadata lookup, library search, candidate generation, and recommendation refinement. The `data/book_database.sh` script provides the central read and write interface for the permanent local library stored in `data/books.csv`.
 
-The workflow launches three background tasks using `&`, records their
-process IDs with `$!`, displays progress dots, and checks completion
-with `wait`.
+Bash connects these programs with arguments, background processes, temporary files, and pipes. `curl` communicates with Open Library, `jq` processes JSON responses, and small Python helpers handle structured CSV data.
 
-- **History:** queries works by the first nonempty author in the library.
-- **Interests:** queries a topic such as Science Fiction.
-- **Discovery:** queries a user-selected exploration topic such as Philosophy.
+## Project Structure
 
-Each task writes to its own temporary file. The workflow interleaves
-their candidates and pipes them into the refinement script. Refinement
-excludes saved title-author pairs, removes duplicates, ranks candidates
-by occurrence count, and returns up to five books. Ties retain input
-order. Temporary files are removed when the workflow exits.
+```text
+book-manager/
+├── app.sh
+├── books/
+│   ├── fetch_book_metadata.sh
+│   └── search_books.sh
+├── data/
+│   ├── book_database.sh
+│   └── books.csv
+├── recommendations/
+│   ├── recommend_for_discovery.sh
+│   ├── recommend_from_history.sh
+│   ├── recommend_from_interests.sh
+│   └── refine_recommendations.sh
+├── ui/
+│   ├── library_screen.sh
+│   ├── main_menu.sh
+│   └── recommendations_screen.sh
+└── workflows/
+    ├── get_recommendations.sh
+    └── manage_library.sh
+```
+
+## Library Management
+
+The permanent personal library is stored in `data/books.csv`. Adding a book can begin with an Open Library search. The user selects a matching result or enters the information manually, reviews the metadata, chooses a reading status, and confirms whether to save it.
+
+Browsing and searching read from the local CSV file. These operations do not require an internet connection.
+
+## Recommendation Workflow
+
+The recommendation workflow launches three independent background tasks:
+
+- **History:** searches using an author found in the saved library
+- **Interests:** searches using a reading interest such as Science Fiction
+- **Discovery:** searches using an exploration topic such as Philosophy
+
+Each task retrieves candidates from Open Library and writes them to a temporary file. The workflow waits for all three tasks, interleaves their results, and sends the combined candidates through a refinement component.
+
+Refinement excludes books already saved in the library, removes duplicate title and author pairs, ranks repeated candidates, and returns up to five books. Temporary files are removed automatically when the workflow finishes.
+
+Open Library acts as an external book catalog. The application does not connect to an LLM while it is running.
 
 ## Personalization
 
-I enjoy science fiction and have read The Three-Body Problem by Cixin
-Liu. Science Fiction is my default recommendation interest, and
-Philosophy is my default exploration topic. Both can be changed in the
-interface. The English terminal UI lets me record books as want to
-read, reading, or read, and review metadata before saving.
+I enjoy science fiction and have read *The Three-Body Problem* by Cixin Liu. Science Fiction is the default recommendation interest, while Philosophy is the default discovery topic. Both values can be changed through the interface.
+
+The application also lets me review online metadata, enter details manually, and record whether a book is one I want to read, am currently reading, or have already read.
 
 ## Current Limitations
 
-- Search results can include unrelated books; users must check matches.
-- Recommendations use catalog queries, not an LLM.
-- History recommendations currently use only the first available author.
-- Duplicate matching does not resolve translated titles or author aliases.
-- Adding a book does not prevent duplicate records.
+- Online search results can include unrelated books and should be reviewed.
+- History recommendations currently use the first available author.
+- Translated titles and author aliases may not be recognized as duplicates.
+- The application does not prevent duplicate records when adding books.
 - Existing records cannot yet be edited through the menu.
-- Ratings are reserved in the CSV schema but are not collected.
-- The final shortlist does not guarantee a book from every source.
+- Ratings are included in the CSV structure but are not currently collected.
+- The final recommendation list does not guarantee a book from every source.
 
 ## Demo
 
-Narrated demo video: [Watch the demo](https://youtu.be/zda538j9eqQ)
+[Watch the narrated application demo](https://youtu.be/zda538j9eqQ)
 
 ## Acknowledgments
 
-Based on the course starter repository: https://github.com/onexi/ps02
-Book metadata and recommendation candidates come from Open Library.
-Codex assisted with development and explanations.
+The project architecture was adapted from the [ps02 starter repository](https://github.com/onexi/ps02). Book metadata and recommendation candidates are provided by [Open Library](https://openlibrary.org/). Codex assisted with development and explanations.
+
+## License
+
+This project is available under the MIT License.
